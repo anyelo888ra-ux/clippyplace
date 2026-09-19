@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ClippyPlace - Realtime Pixel Canvas</title>
+    <!-- Favicon SVG oficial -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -34,6 +36,7 @@
             justify-content: space-between;
             border-bottom: 2px solid #66fcf1;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            z-index: 10;
         }
 
         h1 {
@@ -44,10 +47,32 @@
             gap: 10px;
         }
 
+        h1 span {
+            font-size: 14px;
+            color: #c5c6c7;
+            font-weight: normal;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
         #coords {
             font-family: monospace;
             font-size: 14px;
             color: #45a29e;
+            background: #0b0c10;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #1f2833;
+        }
+
+        #stats {
+            font-family: monospace;
+            font-size: 13px;
+            color: #fe1a93;
         }
 
         #viewport {
@@ -68,7 +93,7 @@
             top: 0;
             left: 0;
             image-rendering: pixelated;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.9);
             background: #ffffff;
         }
 
@@ -82,6 +107,7 @@
             gap: 15px;
             border-top: 1px solid #2b2d31;
             z-index: 10;
+            flex-wrap: wrap;
         }
 
         .palette {
@@ -110,6 +136,7 @@
         .color-btn.selected {
             border-color: #ffffff;
             transform: scale(1.2);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
         }
 
         input[type="color"] {
@@ -130,7 +157,7 @@
             padding: 8px 16px;
             border-radius: 8px;
             border: 1px solid #45a29e;
-            min-width: 150px;
+            min-width: 160px;
             text-align: center;
         }
 
@@ -144,22 +171,46 @@
             color: #0b0c10;
             border: none;
             font-weight: bold;
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 6px;
             cursor: pointer;
+            transition: background 0.2s;
         }
 
         .zoom-btn:hover {
             background: #66fcf1;
+        }
+
+        .discord-btn {
+            background: #5865F2;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+
+        .discord-btn:hover {
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>📎 ClippyPlace <span>| Canvas Colaborativo</span></h1>
-        <div id="coords">X: 0 | Y: 0</div>
+        <h1>📎 ClippyPlace <span>| Lienzo Colaborativo</span></h1>
+        <div class="header-info">
+            <span id="stats">Píxeles: --</span>
+            <div id="coords">X: 0 | Y: 0</div>
+            <!-- Reemplazar el href con la invitación de tu servidor cuando lo crees -->
+            <a href="#" target="_blank" class="discord-btn" id="discordLink">💬 Discord</a>
+        </div>
     </header>
 
     <div id="viewport">
@@ -173,16 +224,16 @@
         </div>
 
         <div class="zoom-controls">
-            <button class="zoom-btn" id="btnZoomIn">+</button>
-            <button class="zoom-btn" id="btnZoomOut">-</button>
-            <button class="zoom-btn" id="btnReset">🎯</button>
+            <button class="zoom-btn" id="btnZoomIn" title="Acercar">+</button>
+            <button class="zoom-btn" id="btnZoomOut" title="Alejar">-</button>
+            <button class="zoom-btn" id="btnReset" title="Centrar lienzo">🎯</button>
         </div>
 
         <div id="cooldown-box">¡Listo para pintar!</div>
     </div>
 
     <script>
-        // CONFIGURACIÓN DE SUPABASE (Tus credenciales)
+        // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = "https://mlcxhwecenrzljbvjwfw.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_cCEnniqUtH84Aw8Ye2rgiQ_SkbaAY2w";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -191,6 +242,7 @@
         const canvas = document.getElementById('placeCanvas');
         const ctx = canvas.getContext('2d');
         const coordsBox = document.getElementById('coords');
+        const statsBox = document.getElementById('stats');
         const cooldownBox = document.getElementById('cooldown-box');
         const customColorInput = document.getElementById('customColor');
 
@@ -202,6 +254,7 @@
         let panY = (viewport.clientHeight - canvas.height * scale) / 2;
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0;
+        let totalPixelsPainted = 0;
 
         const COLORES = [
             '#000000', '#ffffff', '#7e7e7e', '#fe0000', 
@@ -211,7 +264,7 @@
 
         let colorActual = COLORES[3]; // Rojo por defecto
         let enCooldown = false;
-        let tiempoCooldown = 5; // 5 segundos para probar rápido
+        let tiempoCooldown = 5; // 5 segundos de cooldown
 
         // Renderizar Paleta
         const paletteContainer = document.getElementById('palette');
@@ -242,7 +295,7 @@
 
         // Arrastrar mapa (Pan)
         viewport.addEventListener('mousedown', (e) => {
-            if (e.button === 0 && !e.shiftKey) { // Drag normal
+            if (e.button === 0 && !e.shiftKey) {
                 isDragging = true;
                 dragStartX = e.clientX - panX;
                 dragStartY = e.clientY - panY;
@@ -255,7 +308,6 @@
                 panY = e.clientY - dragStartY;
                 updateTransform();
             } else {
-                // Calcular Coordenadas del cursor
                 const rect = canvas.getBoundingClientRect();
                 const x = Math.floor((e.clientX - rect.left) / (PIXEL_SIZE * scale));
                 const y = Math.floor((e.clientY - rect.top) / (PIXEL_SIZE * scale));
@@ -301,6 +353,8 @@
             const { data } = await supabaseClient.from('pixels').select('*');
             if (data) {
                 data.forEach(p => pintarPixel(p.x, p.y, p.color));
+                totalPixelsPainted = data.length;
+                statsBox.innerText = `Píxeles: ${totalPixelsPainted}`;
             }
         }
 
@@ -309,11 +363,17 @@
             .channel('public:pixels')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'pixels' }, payload => {
                 const p = payload.new;
-                if (p) pintarPixel(p.x, p.y, p.color);
+                if (p) {
+                    pintarPixel(p.x, p.y, p.color);
+                    if (payload.eventType === 'INSERT') {
+                        totalPixelsPainted++;
+                        statsBox.innerText = `Píxeles: ${totalPixelsPainted}`;
+                    }
+                }
             })
             .subscribe();
 
-        // Evento de Click para Pintar (Shift + Click o Click directo sin arrastrar mucho)
+        // Evento de Click para Pintar
         let clickStartX = 0, clickStartY = 0;
         canvas.addEventListener('mousedown', (e) => {
             clickStartX = e.clientX;
@@ -321,7 +381,6 @@
         });
 
         canvas.addEventListener('click', async (e) => {
-            // Si arrastró el mouse más de 5px, no es un click para pintar
             if (Math.abs(e.clientX - clickStartX) > 5 || Math.abs(e.clientY - clickStartY) > 5) return;
             if (enCooldown) return;
 
