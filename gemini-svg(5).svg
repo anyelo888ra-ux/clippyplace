@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <!-- Fondo y rejilla de fondo -->
+  <rect width="1200" height="400" fill="#0b0c10"/>
+  
+  <!-- Patrón de Píxeles de colores de r/place -->
+  <g opacity="0.25">
+    <rect x="100" y="50" width="30" height="30" fill="#fe0000"/>
+    <rect x="130" y="50" width="30" height="30" fill="#fe0000"/>
+    <rect x="130" y="80" width="30" height="30" fill="#fe8a00"/>
+    <rect x="1000" y="250" width="40" height="40" fill="#00fe00"/>
+    <rect x="1040" y="250" width="40" height="40" fill="#00b2fe"/>
+    <rect x="1040" y="290" width="40" height="40" fill="#a200fe"/>
+    <rect x="800" y="80" width="25" height="25" fill="#fefe00"/>
+  </g>
+
+  <!-- Marco de Ventana tipo OS -->
+  <rect x="250" y="60" width="700" height="280" rx="10" fill="#1f2833" stroke="#45a29e" stroke-width="3"/>
+  <path d="M 250 60 H 950 V 95 H 250 Z" fill="#0b0c10"/>
+  <circle cx="275" cy="77" r="6" fill="#fe0000"/>
+  <circle cx="295" cy="77" r="6" fill="#fefe00"/>
+  <circle cx="315" cy="77" r="6" fill="#00fe00"/>
+
+  <!-- Título central -->
+  <text x="600" y="190" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="64" fill="#ffffff">
+    📎 Clippy<tspan fill="#66fcf1">Place</tspan>
+  </text>
+  
+  <text x="600" y="240" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-size="22" fill="#c5c6c7">
+    El lienzo colaborativo en tiempo real para <tspan fill="#fe1a93" font-weight="bold">AuraOS</tspan>
+  </text>
+
+  <!-- Subtexto badge -->
+  <rect x="470" y="270" width="260" height="35" rx="17" fill="#66fcf1"/>
+  <text x="600" y="293" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="14" fill="#0b0c10">
+    POWERED BY SUPABASE
+  </text>
+</svg>
